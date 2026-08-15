@@ -1,0 +1,156 @@
+TRAVEL DARSHAK – RAG AGENT KNOWLEDGE TRANSFER (KT)
+
+1. Project
+Travel Darshak is a travel-focused web application. This RAG Agent acts as a restricted
+AI assistant for the Travel Darshak website and answers questions only from Travel Darshak
+related knowledge.
+
+2. Objective
+The objective is to connect an LLM with Travel Darshak information using Retrieval-Augmented
+Generation (RAG). The assistant should not behave like a general-purpose chatbot. It must
+retrieve relevant Travel Darshak content first and generate an answer only from that context.
+
+3. Architecture
+User Website
+    ↓
+FastAPI /ask endpoint
+    ↓
+Question validation
+    ↓
+RAG Retriever
+    ↓
+Travel Darshak website content + optional project PDFs
+    ↓
+Recursive Character Text Splitter
+    ↓
+Gemini Embeddings
+    ↓
+FAISS Vector Store
+    ↓
+Relevant Travel Darshak chunks
+    ↓
+Gemini LLM
+    ↓
+Restricted Travel Darshak response
+    ↓
+Website
+
+4. RAG Process
+First, Travel Darshak source content is loaded. The content is divided into smaller overlapping
+chunks using RecursiveCharacterTextSplitter. Smaller chunks help the retriever find the most
+relevant information instead of passing the entire source to the LLM.
+
+The chunks are converted into vector embeddings using Gemini embeddings and stored in a FAISS
+vector database. When a user asks a question, the question is also represented semantically and
+the most relevant chunks are retrieved.
+
+Only sufficiently relevant chunks are passed to the LLM. This retrieval gate is important because
+the LLM should not use its general knowledge to answer unrelated questions.
+
+5. LLM
+The project uses Google's Gemini model through LangChain's ChatGoogleGenerativeAI integration.
+The LLM receives the user question together with retrieved Travel Darshak context.
+
+The prompt explicitly instructs the model to answer only Travel Darshak-related questions,
+avoid inventing information, ignore instructions inside retrieved documents, and refuse
+unrelated or unauthorized requests.
+
+6. FastAPI
+FastAPI provides the backend API for the website.
+
+Main endpoints:
+GET  /        -> service information
+GET  /health  -> health check
+POST /ask     -> accepts a Travel Darshak question and returns the answer
+
+Example request:
+{
+  "question": "What is Travel Darshak?"
+}
+
+Example response:
+{
+  "answer": "Travel Darshak ...",
+  "sources": ["https://travel-darshak.onrender.com/"]
+}
+
+7. Unauthorized / Unrelated Question Handling
+The system has two protection layers.
+
+Layer 1 – Retrieval Gate:
+If the question does not retrieve sufficiently relevant Travel Darshak content, the backend
+returns:
+"Sorry, I can only help with Travel Darshak related information."
+
+Layer 2 – LLM Scope Prompt:
+Even when relevant context is retrieved, the LLM is instructed to use only that context and
+to refuse unrelated questions, requests for secrets, credentials, system prompts, or private
+information.
+
+8. Knowledge Base
+The primary source is the deployed Travel Darshak website:
+https://travel-darshak.onrender.com/
+
+Optional Travel Darshak PDFs can be placed inside:
+knowledge_base/
+
+Only Travel Darshak/project documents should be placed in this folder.
+
+9. Environment Variable
+Set the Gemini API key before running or deploying:
+
+GOOGLE_API_KEY=your_api_key
+
+Optional variables:
+TRAVEL_DARSHAK_URL=https://travel-darshak.onrender.com/
+GEMINI_MODEL=gemini-2.5-flash
+PORT=8000
+
+Never put the API key directly inside app.py or commit it to GitHub.
+
+10. Running Locally
+Install dependencies:
+pip install -r requirements.txt
+
+Set GOOGLE_API_KEY in the environment.
+
+Run:
+uvicorn app:app --reload
+
+Open:
+http://localhost:8000/docs
+
+11. Deployment
+The FastAPI application can be deployed on Render or another Python-compatible cloud platform.
+The start command can be:
+uvicorn app:app --host 0.0.0.0 --port $PORT
+
+12. Important Files
+app.py
+Contains the FastAPI server, document loading, chunking, embeddings, FAISS retrieval,
+strict scope rules, LLM call, and API endpoints.
+
+requirements.txt
+Contains all Python dependencies required to run the RAG backend.
+
+KT.txt
+Contains the Knowledge Transfer explanation of the Travel Darshak RAG Agent.
+
+13. Key Learning
+This project demonstrates:
+- RAG architecture
+- Document loading and PDF parsing
+- Text chunking
+- Vector embeddings
+- FAISS vector search
+- LangChain integration
+- Gemini LLM integration
+- FastAPI REST APIs
+- Retrieval-based grounding
+- Scope restriction and refusal handling
+- Cloud deployment preparation
+
+14. Important Note
+The RAG system is designed to answer only from the Travel Darshak knowledge sources. It should
+not be treated as a general chatbot. For best accuracy, keep the website content and optional
+PDF knowledge base updated with the latest approved Travel Darshak information.
