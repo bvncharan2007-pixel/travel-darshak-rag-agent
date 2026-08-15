@@ -1,5 +1,3 @@
-%%writefile app.py
-
 import os
 import fitz
 
